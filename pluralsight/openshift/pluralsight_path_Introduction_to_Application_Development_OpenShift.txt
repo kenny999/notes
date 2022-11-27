@@ -1,0 +1,167 @@
+------------------------
+Deploying Applications to Red Hat OpenShift Container Platform
+------------------------
+
+https://app.pluralsight.com/library/courses/deploy-applications-red-hat-openshift-container-platform/table-of-contents
+
+Säg några egenskaper hos containers
+
+Säg 2 sätt att deploya applikationer?
+* Manuellt (gör egen image, olika yaml-filer)
+* Source to image, Openshift utgår från applikationen och sköter resten
+Vad är en pod?
+Vad är ett openshift projekt?
+
+Source to image, S2I
+Checkar bara in koden, S2I skapar image och pod
+
+I OpenShift:
+Skapa projekt
+Välj From Git, peka ut URL till repository
+Han behövde ange applikationen pga flera i samma repository
+Ange application name
+
+Defaultvärden:
+* Deployment
+* Create a route to the application
+
+S2I bygger image, inkl bra bas-image och users
+
+Klicka Topology
+(Hade startats automatiskt)
+
+Man kan göra View Logs
+
+Klicka Route för att surfa till applikationen
+
+-----------------------
+Configuring Application Builds in Red Hat OpenShift Container Platform
+------------------------
+
+https://app.pluralsight.com/paths/skill/introduction-to-application-development-for-red-hat-openshift-container-platform
+
+Pusha uppdaterad kod till github
+oc login ....
+oc new-project <project name>
+oc new-app --name <app-name> https://github.com.... --context-dir version
+Nu startades deployment. Kolla status:
+oc get pods
+
+Kolla services:
+oc get services
+
+Exponera tjänsten för att komma åt från internet:
+oc expose service
+Då skapas en route (= en URL där man kan anropa)
+
+Gå till openshift GUI
+Välj Developer
+Builds
+Klicka "applikationen"
+Actions
+Start Build
+
+För automatiska byggen, kan man få Github att anropa en webhook för att starta en byggning i Openshift
+
+---
+
+Konfiguration, man kan använda ConfigMap
+Key-value pairs
+Värden kan vara (t.ex.?) strängar och listor
+Data syns för pods som mountar denna ConfigMap
+Man ska inte använda hemligheter i ConfigMap
+
+För hemligheter kan man använda "Secrets"
+Värdena är krypterade för "människan" men pods kan se okrypterade värden
+
+För att skapa en ConfigMap:
+WorkLoads -> Config Maps
+Create Config Map
+Namnet på ConfigMap ligger under metadata -> name
+
+Är det så att Openshift-projektet är detsamma som Kubernetes-namespace ?
+
+Man skapar en Secret typ som en ConfigMap
+En administratör kan läsa secret-värden i GUIet
+Ange vilken application som ska få tillgång till ConfigMap/Secret
+Värdena blir tillgängliga som miljövariabler.
+
+När man skapar en applikation i Openshift, kan man längst ner ange:
+Add from ConfigMap or Secret
+
+---
+Connecta till databas
+Man kan sätta upp en databas direkt i OpenShift
+Developer -> Databases -> Postgres
+
+För att koppla upp till databasen själv:
+Topology -> klicka DB-podden -> Terminal
+psql -U ...
+
+----------------------------------
+https://app.pluralsight.com/library/courses/scale-applications-openshift
+
+Skala upp horisontellt: öka antalet pods
+
+Funkar bra för applikationer som är stateless
+
+För att skala via Openshift-GUIet:
+Klicka Developer, Topology, Klicka podden, då öppnas fönster på högersidan.
+Klicka fliken Details. Klicka up-arrow om den finns.
+Annars, använd oc:
+oc scale deployment scale-1 --replicas=2
+(Applikationen heter scale-1)
+
+För att se antalet poddar, klicka poddens flik Resources
+
+Måste trixa för att requests ska gå till olika poddar:
+Routes -> YAML -> Lägg properties under "annotations"
+haproxy.router.openshift.io/balance: roundrobin
+haproxy.router.openshift.io/disable_cookies: true
+
+
+Bra tips för oc:
+Uppe till höger i GUIet kan man hitta "copy the login command" och logga in med oc
+
+För att skala automatiskt: använd "Automatic Pod Scaling"
+
+HPA: Horizontal Pod Autoscaler
+Den övervakar t.ex. CPU-last
+HPA kan skala både upp och ner.
+
+oc get deployment
+oc autoscale deployment scale-1 --max=3 --cpu-percent=20
+
+ab: ett kommando för stresstest:
+i Dockerfile:
+CMD ab ...
+
+----
+
+Troubleshooting Applications in Red Hat OpenShift Container Platform
+
+https://app.pluralsight.com/library/courses/troubleshoot-applications-openshift/table-of-contents
+
+Troubleshooting Build Config
+S2I:
+Two phases: build och deploy
+build pod, then the deployment pod
+Missing variables
+Event stream
+
+Klicka Developer i Openshift-GUIet.
+Yttre ringen. Där ser man info om deployment.
+Inre ringen: resources. Builds -> build logs- Även Pods -> View logs
+
+Klicka till vänster: Monitoring, Events
+
+Accessing a running pod:
+Testa connectivity
+Kolla miljövariabler (env-kommandot. OBS applikationen kan endast använda dessa miljövariabler) , mounting, storage
+* Web console. Topology -> klicka podden -> Terminal
+* Command line
+* Port forwarding. oc port-forward <pod-namn> 8080:8080
+
+
+
+
